@@ -1,0 +1,288 @@
+/*
+ * FilePondPluginImageEdit 1.0.0
+ * Licensed under MIT, https://opensource.org/licenses/MIT
+ * Please visit https://pqina.nl/filepond for details.
+ */
+
+/* eslint-disable */
+const isPreviewableImage = file => /^image/.test(file.type);
+
+/**
+ * Image Edit Proxy Plugin
+ */
+var plugin$1 = _ => {
+  const { addFilter, utils, views } = _;
+  const { Type, createRoute } = utils;
+  const { fileActionButton } = views;
+
+  addFilter(
+    'SHOULD_REMOVE_ON_REVERT',
+    (shouldRemove, { item, query }) =>
+      new Promise(resolve => {
+        const { file } = item;
+
+        // if this file is editable it shouldn't be removed immidiately even when instant uploading
+        const canEdit =
+          query('GET_ALLOW_IMAGE_PREVIEW') &&
+          query('GET_ALLOW_IMAGE_EDIT') &&
+          query('GET_IMAGE_EDIT_ALLOW_EDIT') &&
+          isPreviewableImage(file);
+
+        // if the file cannot be edited it should be removed on revert
+        resolve(!canEdit);
+      })
+  );
+
+  // open editor when loading a new item
+  addFilter(
+    'DID_LOAD_ITEM',
+    (item, { query, dispatch }) =>
+      new Promise((resolve, reject) => {
+        // get file reference
+        const { file } = item;
+        if (
+          !query('GET_ALLOW_IMAGE_PREVIEW') ||
+          !query('GET_ALLOW_IMAGE_EDIT') ||
+          !query('GET_IMAGE_EDIT_INSTANT_EDIT')
+        ) {
+          resolve(item);
+          return;
+        }
+
+        // exit if this is not an image
+        if (!isPreviewableImage(file)) {
+          resolve(item);
+          return;
+        }
+
+        const createEditorResponseHandler = (
+          item,
+          resolve,
+          reject
+        ) => userDidConfirm => {
+          // remove item
+          editRequestQueue.shift();
+
+          // handle item
+          if (userDidConfirm) {
+            resolve(item);
+          } else {
+            reject(item);
+          }
+
+          // handle next item!
+          requestEdit();
+        };
+
+        const requestEdit = () => {
+          if (!editRequestQueue.length) {
+            return;
+          }
+
+          const { item, resolve, reject } = editRequestQueue[0];
+
+          dispatch('EDIT_ITEM', {
+            id: item.id,
+            handleEditorResponse: createEditorResponseHandler(
+              item,
+              resolve,
+              reject
+            )
+          });
+        };
+
+        queueEditRequest({ item, resolve, reject });
+
+        if (editRequestQueue.length === 1) {
+          requestEdit();
+        }
+      })
+  );
+
+  const editRequestQueue = [];
+  const queueEditRequest = editRequest => {
+    editRequestQueue.push(editRequest);
+    return editRequest;
+  };
+
+  // called for each view that is created right after the 'create' method
+  addFilter('CREATE_VIEW', viewAPI => {
+    // get reference to created view
+    const { is, view, query } = viewAPI;
+
+    if (
+      !is('file') ||
+      !query('GET_ALLOW_IMAGE_PREVIEW') ||
+      !query('GET_ALLOW_IMAGE_EDIT')
+    ) {
+      return;
+    }
+
+    // no editor defined, then exit
+    const editor = query('GET_IMAGE_EDIT_EDITOR');
+    if (!editor) return;
+
+    // set default FilePond options
+    editor.outputData = true;
+    editor.outputFile = false;
+    editor.cropAspectRatio =
+      query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
+
+    // opens the editor, if it does not already exist, it creates the editor
+    const openEditor = ({ root, props, action }) => {
+      const { id } = props;
+      const { handleEditorResponse } = action;
+
+      // get item
+      const item = root.query('GET_ITEM', id);
+      if (!item) return;
+
+      // file to open
+      const file = item.file;
+
+      // crop data to pass to editor
+      const imageParameters = {
+        crop: item.getMetadata('crop') || {
+          center: {
+            x: 0.5,
+            y: 0.5
+          },
+          flip: {
+            horizontal: false,
+            vertical: false
+          },
+          zoom: 1,
+          rotation: 0,
+          aspectRatio: null
+        }
+      };
+
+      editor.onconfirm = ({ data }) => {
+        const { crop } = data;
+
+        // update crop metadata
+        item.setMetadata({ crop });
+
+        // used in instant edit mode
+        if (!handleEditorResponse) return;
+        editor.onclose = () => {
+          handleEditorResponse(true);
+          editor.onclose = null;
+        };
+      };
+
+      editor.oncancel = () => {
+        // used in instant edit mode
+        if (!handleEditorResponse) return;
+        editor.onclose = () => {
+          handleEditorResponse(false);
+          editor.onclose = null;
+        };
+      };
+
+      editor.open(file, imageParameters);
+    };
+
+    /**
+     * Image Preview related
+     */
+    const didPreviewUpdate = ({ root }) => {
+      if (!root.ref.buttonEditItem) {
+        return;
+      }
+      root.ref.buttonEditItem.opacity = 1;
+    };
+
+    // create the image preview plugin, but only do so if the item is an image
+    const didLoadItem = ({ root, props }) => {
+      if (!query('GET_IMAGE_EDIT_ALLOW_EDIT')) {
+        return;
+      }
+
+      const { id } = props;
+
+      // try to access item
+      const item = query('GET_ITEM', id);
+      if (!item) return;
+
+      // get the file object
+      const file = item.file;
+
+      // exit if this is not an image
+      if (!isPreviewableImage(file)) {
+        return;
+      }
+
+      // set preview view
+      const buttonView = view.createChildView(fileActionButton, {
+        label: 'edit',
+        icon: query('GET_IMAGE_EDIT_ICON_EDIT'),
+        opacity: 0
+      });
+
+      // edit item classname
+      buttonView.element.classList.add('filepond--action-edit-item');
+      buttonView.element.dataset.align = query(
+        'GET_STYLE_IMAGE_EDIT_BUTTON_EDIT_ITEM_POSITION'
+      );
+
+      // handle interactions
+      root.ref.handleEdit = () => root.dispatch('EDIT_ITEM', { id });
+      buttonView.on('click', root.ref.handleEdit);
+
+      root.ref.buttonEditItem = view.appendChildView(buttonView);
+    };
+
+    view.registerDestroyer(({ root }) => {
+      if (root.ref.buttonEditItem) {
+        root.ref.buttonEditItem.off('click', root.ref.handleEdit);
+      }
+    });
+
+    // start writing
+    view.registerWriter(
+      createRoute({
+        DID_IMAGE_PREVIEW_SHOW: didPreviewUpdate,
+        DID_LOAD_ITEM: didLoadItem,
+        EDIT_ITEM: openEditor
+      })
+    );
+  });
+
+  // Expose plugin options
+  return {
+    options: {
+      // enable or disable image editing
+      allowImageEdit: [true, Type.BOOLEAN],
+
+      // location of processing button
+      styleImageEditButtonEditItemPosition: ['bottom center', Type.STRING],
+
+      // open editor when image is dropped
+      imageEditInstantEdit: [false, Type.BOOLEAN],
+
+      // allow editing
+      imageEditAllowEdit: [true, Type.BOOLEAN],
+
+      // the icon to use for the edit button
+      imageEditIconEdit: [
+        '<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg"><path d="M8.5 17h1.586l7-7L15.5 8.414l-7 7V17zm-1.707-2.707l8-8a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1 0 1.414l-8 8A1 1 0 0 1 10.5 19h-3a1 1 0 0 1-1-1v-3a1 1 0 0 1 .293-.707z" fill="currentColor" fill-rule="nonzero"/></svg>',
+        Type.STRING
+      ],
+
+      // editor object
+      imageEditEditor: [null, Type.OBJECT]
+    }
+  };
+};
+
+const isBrowser =
+  typeof window !== 'undefined' && typeof window.document !== 'undefined';
+
+if (isBrowser && document) {
+  document.dispatchEvent(
+    new CustomEvent('FilePond:pluginloaded', { detail: plugin$1 })
+  );
+}
+
+export default plugin$1;

@@ -1,0 +1,18 @@
+{
+    "name": "filepond-plugin-image-edit",
+    "version": "1.0.0",
+    "description": "Image Edit Plugin for FilePond",
+    "homepage": "https://pqina.nl/filepond",
+    "repository": "pqina/filepond-plugin-image-edit",
+    "main": "dist/filepond-plugin-image-edit.js",
+    "browser": "dist/filepond-plugin-image-edit.js",
+    "module": "dist/filepond-plugin-image-edit.esm.js",
+    "license": "MIT",
+    "author": {
+        "name": "PQINA",
+        "url": "https://pqina.nl"
+    },
+    "peerDependencies": {
+        "filepond": "^3.0.0"
+    }
+}
