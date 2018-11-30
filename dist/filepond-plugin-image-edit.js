@@ -1,5 +1,5 @@
 /*
- * FilePondPluginImageEdit 1.0.0
+ * FilePondPluginImageEdit 1.0.1
  * Licensed under MIT, https://opensource.org/licenses/MIT
  * Please visit https://pqina.nl/filepond for details.
  */
@@ -86,6 +86,9 @@
             } else {
               reject(item);
             }
+
+            // TODO: Fix, should not be needed to kick the internal loop in case no processes are running
+            dispatch('KICK');
 
             // handle next item!
             requestEdit();
