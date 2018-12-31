@@ -1,5 +1,5 @@
 /*
- * FilePondPluginImageEdit 1.0.1
+ * FilePondPluginImageEdit 1.0.3
  * Licensed under MIT, https://opensource.org/licenses/MIT
  * Please visit https://pqina.nl/filepond for details.
  */
@@ -26,7 +26,14 @@
       utils = _.utils,
       views = _.views;
     var Type = utils.Type,
-      createRoute = utils.createRoute;
+      createRoute = utils.createRoute,
+      _utils$createItemAPI = utils.createItemAPI,
+      createItemAPI =
+        _utils$createItemAPI === undefined
+          ? function(item) {
+              return item;
+            }
+          : _utils$createItemAPI;
     var fileActionButton = views.fileActionButton;
 
     addFilter('SHOULD_REMOVE_ON_REVERT', function(shouldRemove, _ref) {
@@ -154,6 +161,14 @@
       editor.cropAspectRatio =
         query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
 
+      // add bridge once
+      if (!editor.filepondCallbackBridge) {
+        editor.filepondCallbackBridge = {
+          onconfirm: editor.onconfirm || function() {},
+          oncancel: editor.oncancel || function() {}
+        };
+      }
+
       // opens the editor, if it does not already exist, it creates the editor
       var openEditor = function openEditor(_ref3) {
         var root = _ref3.root,
@@ -195,6 +210,9 @@
 
           item.setMetadata({ crop: crop });
 
+          // call
+          editor.filepondCallbackBridge.onconfirm(data, createItemAPI(item));
+
           // used in instant edit mode
           if (!handleEditorResponse) return;
           editor.onclose = function() {
@@ -204,6 +222,9 @@
         };
 
         editor.oncancel = function() {
+          // call
+          editor.filepondCallbackBridge.oncancel(createItemAPI(item));
+
           // used in instant edit mode
           if (!handleEditorResponse) return;
           editor.onclose = function() {
@@ -221,9 +242,7 @@
       var didPreviewUpdate = function didPreviewUpdate(_ref5) {
         var root = _ref5.root;
 
-        if (!root.ref.buttonEditItem) {
-          return;
-        }
+        if (!root.ref.buttonEditItem) return;
         root.ref.buttonEditItem.opacity = 1;
       };
 

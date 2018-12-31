@@ -1,6 +1,6 @@
 {
     "name": "filepond-plugin-image-edit",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "description": "Image Edit Plugin for FilePond",
     "homepage": "https://pqina.nl/filepond",
     "repository": "pqina/filepond-plugin-image-edit",
@@ -13,6 +13,6 @@
         "url": "https://pqina.nl"
     },
     "peerDependencies": {
-        "filepond": "^3.0.0"
+        "filepond": "^3.7.2"
     }
 }

@@ -1,5 +1,5 @@
 /*
- * FilePondPluginImageEdit 1.0.1
+ * FilePondPluginImageEdit 1.0.3
  * Licensed under MIT, https://opensource.org/licenses/MIT
  * Please visit https://pqina.nl/filepond for details.
  */
@@ -12,7 +12,7 @@ const isPreviewableImage = file => /^image/.test(file.type);
  */
 var plugin$1 = _ => {
   const { addFilter, utils, views } = _;
-  const { Type, createRoute } = utils;
+  const { Type, createRoute, createItemAPI = item => item } = utils;
   const { fileActionButton } = views;
 
   addFilter(
@@ -131,6 +131,14 @@ var plugin$1 = _ => {
     editor.cropAspectRatio =
       query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
 
+    // add bridge once
+    if (!editor.filepondCallbackBridge) {
+      editor.filepondCallbackBridge = {
+        onconfirm: editor.onconfirm || (() => {}),
+        oncancel: editor.oncancel || (() => {})
+      };
+    }
+
     // opens the editor, if it does not already exist, it creates the editor
     const openEditor = ({ root, props, action }) => {
       const { id } = props;
@@ -166,6 +174,9 @@ var plugin$1 = _ => {
         // update crop metadata
         item.setMetadata({ crop });
 
+        // call
+        editor.filepondCallbackBridge.onconfirm(data, createItemAPI(item));
+
         // used in instant edit mode
         if (!handleEditorResponse) return;
         editor.onclose = () => {
@@ -175,6 +186,9 @@ var plugin$1 = _ => {
       };
 
       editor.oncancel = () => {
+        // call
+        editor.filepondCallbackBridge.oncancel(createItemAPI(item));
+
         // used in instant edit mode
         if (!handleEditorResponse) return;
         editor.onclose = () => {
@@ -190,9 +204,7 @@ var plugin$1 = _ => {
      * Image Preview related
      */
     const didPreviewUpdate = ({ root }) => {
-      if (!root.ref.buttonEditItem) {
-        return;
-      }
+      if (!root.ref.buttonEditItem) return;
       root.ref.buttonEditItem.opacity = 1;
     };
 
