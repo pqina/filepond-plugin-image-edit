@@ -1,5 +1,5 @@
 /*
- * FilePondPluginImageEdit 1.0.3
+ * FilePondPluginImageEdit 1.0.4
  * Licensed under MIT, https://opensource.org/licenses/MIT
  * Please visit https://pqina.nl/filepond for details.
  */
@@ -60,6 +60,12 @@
       var query = _ref2.query,
         dispatch = _ref2.dispatch;
       return new Promise(function(resolve, reject) {
+        // if is temp or local file
+        if (item.origin > 1) {
+          resolve(item);
+          return;
+        }
+
         // get file reference
         var file = item.file;
 
