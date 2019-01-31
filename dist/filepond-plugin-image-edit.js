@@ -1,5 +1,5 @@
 /*
- * FilePondPluginImageEdit 1.0.4
+ * FilePondPluginImageEdit 1.1.0
  * Licensed under MIT, https://opensource.org/licenses/MIT
  * Please visit https://pqina.nl/filepond for details.
  */
@@ -136,6 +136,16 @@
       });
     });
 
+    // extend item methods
+    addFilter('DID_CREATE_ITEM', function(item, _ref3) {
+      var query = _ref3.query,
+        dispatch = _ref3.dispatch;
+
+      item.extend('edit', function() {
+        dispatch('EDIT_ITEM', { id: item.id });
+      });
+    });
+
     var editRequestQueue = [];
     var queueEditRequest = function queueEditRequest(editRequest) {
       editRequestQueue.push(editRequest);
@@ -176,10 +186,10 @@
       }
 
       // opens the editor, if it does not already exist, it creates the editor
-      var openEditor = function openEditor(_ref3) {
-        var root = _ref3.root,
-          props = _ref3.props,
-          action = _ref3.action;
+      var openEditor = function openEditor(_ref4) {
+        var root = _ref4.root,
+          props = _ref4.props,
+          action = _ref4.action;
         var id = props.id;
         var handleEditorResponse = action.handleEditorResponse;
 
@@ -208,8 +218,8 @@
           }
         };
 
-        editor.onconfirm = function(_ref4) {
-          var data = _ref4.data;
+        editor.onconfirm = function(_ref5) {
+          var data = _ref5.data;
           var crop = data.crop;
 
           // update crop metadata
@@ -245,17 +255,17 @@
       /**
        * Image Preview related
        */
-      var didPreviewUpdate = function didPreviewUpdate(_ref5) {
-        var root = _ref5.root;
+      var didPreviewUpdate = function didPreviewUpdate(_ref6) {
+        var root = _ref6.root;
 
         if (!root.ref.buttonEditItem) return;
         root.ref.buttonEditItem.opacity = 1;
       };
 
       // create the image preview plugin, but only do so if the item is an image
-      var didLoadItem = function didLoadItem(_ref6) {
-        var root = _ref6.root,
-          props = _ref6.props;
+      var didLoadItem = function didLoadItem(_ref7) {
+        var root = _ref7.root,
+          props = _ref7.props;
 
         if (!query('GET_IMAGE_EDIT_ALLOW_EDIT')) {
           return;
@@ -298,8 +308,8 @@
         root.ref.buttonEditItem = view.appendChildView(buttonView);
       };
 
-      view.registerDestroyer(function(_ref7) {
-        var root = _ref7.root;
+      view.registerDestroyer(function(_ref8) {
+        var root = _ref8.root;
 
         if (root.ref.buttonEditItem) {
           root.ref.buttonEditItem.off('click', root.ref.handleEdit);
@@ -346,7 +356,7 @@
   var isBrowser =
     typeof window !== 'undefined' && typeof window.document !== 'undefined';
 
-  if (isBrowser && document) {
+  if (isBrowser) {
     document.dispatchEvent(
       new CustomEvent('FilePond:pluginloaded', { detail: plugin$1 })
     );
