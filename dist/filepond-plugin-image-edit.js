@@ -1,5 +1,5 @@
 /*
- * FilePondPluginImageEdit 1.1.1
+ * FilePondPluginImageEdit 1.1.2
  * Licensed under MIT, https://opensource.org/licenses/MIT
  * Please visit https://pqina.nl/filepond for details.
  */
@@ -262,7 +262,7 @@
         root.ref.buttonEditItem.opacity = 1;
       };
 
-      // create the image preview plugin, but only do so if the item is an image
+      // create the image edit plugin, but only do so if the item is an image
       var didLoadItem = function didLoadItem(_ref7) {
         var root = _ref7.root,
           props = _ref7.props;
@@ -286,7 +286,7 @@
           return;
         }
 
-        // set preview view
+        // add edit button
         var buttonView = view.createChildView(fileActionButton, {
           label: 'edit',
           icon: query('GET_IMAGE_EDIT_ICON_EDIT'),
@@ -300,8 +300,9 @@
         );
 
         // handle interactions
-        root.ref.handleEdit = function() {
-          return root.dispatch('EDIT_ITEM', { id: id });
+        root.ref.handleEdit = function(e) {
+          e.stopPropagation();
+          root.dispatch('EDIT_ITEM', { id: id });
         };
         buttonView.on('click', root.ref.handleEdit);
 
