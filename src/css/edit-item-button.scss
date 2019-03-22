@@ -1,0 +1,13 @@
+.filepond--action-edit-item.filepond--action-edit-item {
+    width:2em;
+    height:2em;
+    padding:.1875em;
+
+    &[data-align*='center'] {
+        margin-left:-.1875em;
+    }
+    
+    &[data-align*='bottom'] {
+        margin-bottom:-.1875em;
+    }
+}

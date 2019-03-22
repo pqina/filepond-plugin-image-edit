@@ -1,16 +1,17 @@
-/*
- * FilePondPluginImageEdit 1.1.2
- * Licensed under MIT, https://opensource.org/licenses/MIT
- * Please visit https://pqina.nl/filepond for details.
+/*!
+ * FilePondPluginImageEdit 1.1.3
+ * Licensed under MIT, https://opensource.org/licenses/MIT/
+ * Please visit https://pqina.nl/filepond/ for details.
  */
 
 /* eslint-disable */
+
 const isPreviewableImage = file => /^image/.test(file.type);
 
 /**
  * Image Edit Proxy Plugin
  */
-var plugin$1 = _ => {
+const plugin = _ => {
   const { addFilter, utils, views } = _;
   const { Type, createRoute, createItemAPI = item => item } = utils;
   const { fileActionButton } = views;
@@ -307,13 +308,13 @@ var plugin$1 = _ => {
   };
 };
 
+// fire pluginloaded event if running in browser, this allows registering the plugin when using async script tags
 const isBrowser =
   typeof window !== 'undefined' && typeof window.document !== 'undefined';
-
 if (isBrowser) {
   document.dispatchEvent(
-    new CustomEvent('FilePond:pluginloaded', { detail: plugin$1 })
+    new CustomEvent('FilePond:pluginloaded', { detail: plugin })
   );
 }
 
-export default plugin$1;
+export default plugin;
