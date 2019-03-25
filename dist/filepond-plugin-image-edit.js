@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.1.3
+ * FilePondPluginImageEdit 1.1.4
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -18,10 +18,10 @@
   var isPreviewableImage = function isPreviewableImage(file) {
     return /^image/.test(file.type);
   };
+
   /**
    * Image Edit Proxy Plugin
    */
-
   var plugin = function plugin(_) {
     var addFilter = _.addFilter,
       utils = _.utils,
@@ -36,22 +36,26 @@
             }
           : _utils$createItemAPI;
     var fileActionButton = views.fileActionButton;
+
     addFilter('SHOULD_REMOVE_ON_REVERT', function(shouldRemove, _ref) {
       var item = _ref.item,
         query = _ref.query;
       return new Promise(function(resolve) {
-        var file = item.file; // if this file is editable it shouldn't be removed immidiately even when instant uploading
+        var file = item.file;
 
+        // if this file is editable it shouldn't be removed immidiately even when instant uploading
         var canEdit =
           query('GET_ALLOW_IMAGE_PREVIEW') &&
           query('GET_ALLOW_IMAGE_EDIT') &&
           query('GET_IMAGE_EDIT_ALLOW_EDIT') &&
-          isPreviewableImage(file); // if the file cannot be edited it should be removed on revert
+          isPreviewableImage(file);
 
+        // if the file cannot be edited it should be removed on revert
         resolve(!canEdit);
       });
-    }); // open editor when loading a new item
+    });
 
+    // open editor when loading a new item
     addFilter('DID_LOAD_ITEM', function(item, _ref2) {
       var query = _ref2.query,
         dispatch = _ref2.dispatch;
@@ -60,10 +64,10 @@
         if (item.origin > 1) {
           resolve(item);
           return;
-        } // get file reference
+        }
 
+        // get file reference
         var file = item.file;
-
         if (
           !query('GET_ALLOW_IMAGE_PREVIEW') ||
           !query('GET_ALLOW_IMAGE_EDIT') ||
@@ -71,8 +75,9 @@
         ) {
           resolve(item);
           return;
-        } // exit if this is not an image
+        }
 
+        // exit if this is not an image
         if (!isPreviewableImage(file)) {
           resolve(item);
           return;
@@ -85,16 +90,19 @@
         ) {
           return function(userDidConfirm) {
             // remove item
-            editRequestQueue.shift(); // handle item
+            editRequestQueue.shift();
 
+            // handle item
             if (userDidConfirm) {
               resolve(item);
             } else {
               reject(item);
-            } // TODO: Fix, should not be needed to kick the internal loop in case no processes are running
+            }
 
-            dispatch('KICK'); // handle next item!
+            // TODO: Fix, should not be needed to kick the internal loop in case no processes are running
+            dispatch('KICK');
 
+            // handle next item!
             requestEdit();
           };
         };
@@ -103,11 +111,11 @@
           if (!editRequestQueue.length) {
             return;
           }
-
           var _editRequestQueue$ = editRequestQueue[0],
             item = _editRequestQueue$.item,
             resolve = _editRequestQueue$.resolve,
             reject = _editRequestQueue$.reject;
+
           dispatch('EDIT_ITEM', {
             id: item.id,
             handleEditorResponse: createEditorResponseHandler(
@@ -118,34 +126,30 @@
           });
         };
 
-        queueEditRequest({
-          item: item,
-          resolve: resolve,
-          reject: reject
-        });
+        queueEditRequest({ item: item, resolve: resolve, reject: reject });
 
         if (editRequestQueue.length === 1) {
           requestEdit();
         }
       });
-    }); // extend item methods
+    });
 
+    // extend item methods
     addFilter('DID_CREATE_ITEM', function(item, _ref3) {
       var query = _ref3.query,
         dispatch = _ref3.dispatch;
       item.extend('edit', function() {
-        dispatch('EDIT_ITEM', {
-          id: item.id
-        });
+        dispatch('EDIT_ITEM', { id: item.id });
       });
     });
-    var editRequestQueue = [];
 
+    var editRequestQueue = [];
     var queueEditRequest = function queueEditRequest(editRequest) {
       editRequestQueue.push(editRequest);
       return editRequest;
-    }; // called for each view that is created right after the 'create' method
+    };
 
+    // called for each view that is created right after the 'create' method
     addFilter('CREATE_VIEW', function(viewAPI) {
       // get reference to created view
       var is = viewAPI.is,
@@ -158,45 +162,54 @@
         !query('GET_ALLOW_IMAGE_EDIT')
       ) {
         return;
-      } // no editor defined, then exit
+      }
 
+      // no editor defined, then exit
       var editor = query('GET_IMAGE_EDIT_EDITOR');
-      if (!editor) return; // set default FilePond options
+      if (!editor) return;
 
+      // set default FilePond options
       editor.outputData = true;
       editor.outputFile = false;
       editor.cropAspectRatio =
-        query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio; // add bridge once
+        query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
 
+      // add bridge once
       if (!editor.filepondCallbackBridge) {
         editor.filepondCallbackBridge = {
           onconfirm: editor.onconfirm || function() {},
           oncancel: editor.oncancel || function() {}
         };
-      } // opens the editor, if it does not already exist, it creates the editor
+      }
 
+      // opens the editor, if it does not already exist, it creates the editor
       var openEditor = function openEditor(_ref4) {
         var root = _ref4.root,
           props = _ref4.props,
           action = _ref4.action;
         var id = props.id;
-        var handleEditorResponse = action.handleEditorResponse; // get item
+        var handleEditorResponse = action.handleEditorResponse;
 
+        // get item
         var item = root.query('GET_ITEM', id);
-        if (!item) return; // file to open
+        if (!item) return;
 
-        var file = item.file; // crop data to pass to editor
+        // file to open
+        var file = item.file;
 
+        // crop data to pass to editor
         var imageParameters = {
           crop: item.getMetadata('crop') || {
             center: {
               x: 0.5,
               y: 0.5
             },
+
             flip: {
               horizontal: false,
               vertical: false
             },
+
             zoom: 1,
             rotation: 0,
             aspectRatio: null
@@ -205,16 +218,16 @@
 
         editor.onconfirm = function(_ref5) {
           var data = _ref5.data;
-          var crop = data.crop; // update crop metadata
+          var crop = data.crop;
 
-          item.setMetadata({
-            crop: crop
-          }); // call
+          // update crop metadata
+          item.setMetadata({ crop: crop });
 
-          editor.filepondCallbackBridge.onconfirm(data, createItemAPI(item)); // used in instant edit mode
+          // call
+          editor.filepondCallbackBridge.onconfirm(data, createItemAPI(item));
 
+          // used in instant edit mode
           if (!handleEditorResponse) return;
-
           editor.onclose = function() {
             handleEditorResponse(true);
             editor.onclose = null;
@@ -223,10 +236,10 @@
 
         editor.oncancel = function() {
           // call
-          editor.filepondCallbackBridge.oncancel(createItemAPI(item)); // used in instant edit mode
+          editor.filepondCallbackBridge.oncancel(createItemAPI(item));
 
+          // used in instant edit mode
           if (!handleEditorResponse) return;
-
           editor.onclose = function() {
             handleEditorResponse(false);
             editor.onclose = null;
@@ -235,16 +248,17 @@
 
         editor.open(file, imageParameters);
       };
+
       /**
        * Image Preview related
        */
-
       var didPreviewUpdate = function didPreviewUpdate(_ref6) {
         var root = _ref6.root;
         if (!root.ref.buttonEditItem) return;
         root.ref.buttonEditItem.opacity = 1;
-      }; // create the image edit plugin, but only do so if the item is an image
+      };
 
+      // create the image edit plugin, but only do so if the item is an image
       var didLoadItem = function didLoadItem(_ref7) {
         var root = _ref7.root,
           props = _ref7.props;
@@ -252,48 +266,51 @@
         if (!query('GET_IMAGE_EDIT_ALLOW_EDIT')) {
           return;
         }
+        var id = props.id;
 
-        var id = props.id; // try to access item
-
+        // try to access item
         var item = query('GET_ITEM', id);
-        if (!item) return; // get the file object
+        if (!item) return;
 
-        var file = item.file; // exit if this is not an image
+        // get the file object
+        var file = item.file;
 
+        // exit if this is not an image
         if (!isPreviewableImage(file)) {
           return;
-        } // add edit button
+        }
 
+        // add edit button
         var buttonView = view.createChildView(fileActionButton, {
           label: 'edit',
           icon: query('GET_IMAGE_EDIT_ICON_EDIT'),
           opacity: 0
-        }); // edit item classname
+        });
 
+        // edit item classname
         buttonView.element.classList.add('filepond--action-edit-item');
         buttonView.element.dataset.align = query(
           'GET_STYLE_IMAGE_EDIT_BUTTON_EDIT_ITEM_POSITION'
-        ); // handle interactions
+        );
 
+        // handle interactions
         root.ref.handleEdit = function(e) {
           e.stopPropagation();
-          root.dispatch('EDIT_ITEM', {
-            id: id
-          });
+          root.dispatch('EDIT_ITEM', { id: id });
         };
-
         buttonView.on('click', root.ref.handleEdit);
+
         root.ref.buttonEditItem = view.appendChildView(buttonView);
       };
 
       view.registerDestroyer(function(_ref8) {
         var root = _ref8.root;
-
         if (root.ref.buttonEditItem) {
           root.ref.buttonEditItem.off('click', root.ref.handleEdit);
         }
-      }); // start writing
+      });
 
+      // start writing
       view.registerWriter(
         createRoute({
           DID_IMAGE_PREVIEW_SHOW: didPreviewUpdate,
@@ -301,37 +318,41 @@
           EDIT_ITEM: openEditor
         })
       );
-    }); // Expose plugin options
+    });
 
+    // Expose plugin options
     return {
       options: {
         // enable or disable image editing
         allowImageEdit: [true, Type.BOOLEAN],
+
         // location of processing button
         styleImageEditButtonEditItemPosition: ['bottom center', Type.STRING],
+
         // open editor when image is dropped
         imageEditInstantEdit: [false, Type.BOOLEAN],
+
         // allow editing
         imageEditAllowEdit: [true, Type.BOOLEAN],
+
         // the icon to use for the edit button
         imageEditIconEdit: [
           '<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg"><path d="M8.5 17h1.586l7-7L15.5 8.414l-7 7V17zm-1.707-2.707l8-8a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1 0 1.414l-8 8A1 1 0 0 1 10.5 19h-3a1 1 0 0 1-1-1v-3a1 1 0 0 1 .293-.707z" fill="currentColor" fill-rule="nonzero"/></svg>',
           Type.STRING
         ],
+
         // editor object
         imageEditEditor: [null, Type.OBJECT]
       }
     };
-  }; // fire pluginloaded event if running in browser, this allows registering the plugin when using async script tags
+  };
 
+  // fire pluginloaded event if running in browser, this allows registering the plugin when using async script tags
   var isBrowser =
     typeof window !== 'undefined' && typeof window.document !== 'undefined';
-
   if (isBrowser) {
     document.dispatchEvent(
-      new CustomEvent('FilePond:pluginloaded', {
-        detail: plugin
-      })
+      new CustomEvent('FilePond:pluginloaded', { detail: plugin })
     );
   }
 
