@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.1.6
+ * FilePondPluginImageEdit 1.2.0
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -166,32 +166,69 @@ const plugin = _ => {
       const file = item.file;
 
       // crop data to pass to editor
-      const imageParameters = {
-        crop: item.getMetadata('crop') || {
-          center: {
-            x: 0.5,
-            y: 0.5
-          },
-          flip: {
-            horizontal: false,
-            vertical: false
-          },
-          zoom: 1,
-          rotation: 0,
-          aspectRatio: null
+      const crop = item.getMetadata('crop');
+      const cropDefault = {
+        center: {
+          x: 0.5,
+          y: 0.5
         },
-        size: item.getMetadata('resize') || null
+        flip: {
+          horizontal: false,
+          vertical: false
+        },
+        zoom: 1,
+        rotation: 0,
+        aspectRatio: null
+      };
+
+      const resize = item.getMetadata('resize');
+      const imageParameters = {
+        crop: crop || cropDefault,
+        size: resize
+          ? {
+              upscale: resize.upscale,
+              mode: resize.mode,
+              width: resize.size.width,
+              height: resize.size.height
+            }
+          : null
       };
 
       editor.onconfirm = ({ data }) => {
         const { crop, size } = data;
 
+        // create new metadata object
+        const metadata = {};
+
+        // append crop data
+        if (crop) {
+          metadata.crop = crop;
+        }
+
+        // append size data
+        if (size) {
+          const initialSize = (item.getMetadata('resize') || {}).size;
+          const targetSize = {
+            width: size.width,
+            height: size.height
+          };
+
+          if (!(targetSize.width && targetSize.height) && initialSize) {
+            targetSize.width = initialSize.width;
+            targetSize.height = initialSize.height;
+          }
+
+          if (targetSize.width || targetSize.height) {
+            metadata.resize = {
+              upscale: size.upscale,
+              mode: size.mode,
+              size: targetSize
+            };
+          }
+        }
+
         // update crop metadata
-        item.setMetadata({
-          crop
-          // ,
-          // resize: size
-        });
+        item.setMetadata(metadata);
 
         // call
         editor.filepondCallbackBridge.onconfirm(data, createItemAPI(item));

@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.1.6
+ * FilePondPluginImageEdit 1.2.0
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -198,24 +198,34 @@
         var file = item.file;
 
         // crop data to pass to editor
-        var imageParameters = {
-          crop: item.getMetadata('crop') || {
-            center: {
-              x: 0.5,
-              y: 0.5
-            },
-
-            flip: {
-              horizontal: false,
-              vertical: false
-            },
-
-            zoom: 1,
-            rotation: 0,
-            aspectRatio: null
+        var crop = item.getMetadata('crop');
+        var cropDefault = {
+          center: {
+            x: 0.5,
+            y: 0.5
           },
 
-          size: item.getMetadata('resize') || null
+          flip: {
+            horizontal: false,
+            vertical: false
+          },
+
+          zoom: 1,
+          rotation: 0,
+          aspectRatio: null
+        };
+
+        var resize = item.getMetadata('resize');
+        var imageParameters = {
+          crop: crop || cropDefault,
+          size: resize
+            ? {
+                upscale: resize.upscale,
+                mode: resize.mode,
+                width: resize.size.width,
+                height: resize.size.height
+              }
+            : null
         };
 
         editor.onconfirm = function(_ref5) {
@@ -223,12 +233,38 @@
           var crop = data.crop,
             size = data.size;
 
+          // create new metadata object
+          var metadata = {};
+
+          // append crop data
+          if (crop) {
+            metadata.crop = crop;
+          }
+
+          // append size data
+          if (size) {
+            var initialSize = (item.getMetadata('resize') || {}).size;
+            var targetSize = {
+              width: size.width,
+              height: size.height
+            };
+
+            if (!(targetSize.width && targetSize.height) && initialSize) {
+              targetSize.width = initialSize.width;
+              targetSize.height = initialSize.height;
+            }
+
+            if (targetSize.width || targetSize.height) {
+              metadata.resize = {
+                upscale: size.upscale,
+                mode: size.mode,
+                size: targetSize
+              };
+            }
+          }
+
           // update crop metadata
-          item.setMetadata({
-            crop: crop
-            // ,
-            // resize: size
-          });
+          item.setMetadata(metadata);
 
           // call
           editor.filepondCallbackBridge.onconfirm(data, createItemAPI(item));
