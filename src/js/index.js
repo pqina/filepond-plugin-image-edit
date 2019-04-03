@@ -180,8 +180,9 @@ const plugin = _ => {
 
                 // update crop metadata
                 item.setMetadata({
-                    crop,
-                    resize: size
+                    crop
+                    // ,
+                    // resize: size
                 });
 
                 // call
