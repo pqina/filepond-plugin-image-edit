@@ -170,15 +170,19 @@ const plugin = _ => {
                     zoom: 1,
                     rotation: 0,
                     aspectRatio: null
-                }
+                },
+                size: item.getMetadata('resize') || null
             };
 
             editor.onconfirm = ({ data }) => {
 
-                const { crop } = data;
+                const { crop, size } = data;
 
                 // update crop metadata
-                item.setMetadata({ crop });
+                item.setMetadata({
+                    crop,
+                    resize: size
+                });
 
                 // call
                 editor.filepondCallbackBridge.onconfirm(data, createItemAPI(item));
@@ -206,7 +210,6 @@ const plugin = _ => {
             };
 
             editor.open(file, imageParameters);
-
         };
 
 

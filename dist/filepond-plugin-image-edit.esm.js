@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.1.4
+ * FilePondPluginImageEdit 1.1.5
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -179,14 +179,18 @@ const plugin = _ => {
           zoom: 1,
           rotation: 0,
           aspectRatio: null
-        }
+        },
+        size: item.getMetadata('resize') || null
       };
 
       editor.onconfirm = ({ data }) => {
-        const { crop } = data;
+        const { crop, size } = data;
 
         // update crop metadata
-        item.setMetadata({ crop });
+        item.setMetadata({
+          crop,
+          resize: size
+        });
 
         // call
         editor.filepondCallbackBridge.onconfirm(data, createItemAPI(item));
