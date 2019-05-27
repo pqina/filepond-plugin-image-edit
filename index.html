@@ -40,14 +40,23 @@
             // - receives file object and image edit instructions
             open: (file, instructions) => {
 
-                // open editor here
                 console.log(file, instructions);
 
-                // we "edit" the data
+                // the user "edits" the data (this part is handled by a separate image cropper/editor plugin)
                 const data = Object.assign({}, instructions);
+
+                // user zooms image
                 data.crop.zoom = 2;
 
-                // done editing, simulate confirm
+                // ser sets grayscale filter
+                data.filter = [
+                    0.212, 0.715, 0.114, 0.000, 0.000,
+                    0.212, 0.715, 0.114, 0.000, 0.000,
+                    0.212, 0.715, 0.114, 0.000, 0.000,
+                    0.000, 0.000, 0.000, 1.000, 0.000
+                ];
+
+                // the user is done editing, simulate confirm
                 setTimeout(() => {
                     editor.onconfirm({ data });
                 }, 1000);
@@ -79,7 +88,7 @@
                 document.querySelector('img.output').src = URL.createObjectURL(output);
             }
         });
-        
+
     </script>
 
 </body>

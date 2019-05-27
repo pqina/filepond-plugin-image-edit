@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.2.0
+ * FilePondPluginImageEdit 1.3.0
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -168,14 +168,12 @@
       var editor = query('GET_IMAGE_EDIT_EDITOR');
       if (!editor) return;
 
-      // set default FilePond options
-      editor.outputData = true;
-      editor.outputFile = false;
-      editor.cropAspectRatio =
-        query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
-
-      // add bridge once
+      // set default FilePond options and add bridge once
       if (!editor.filepondCallbackBridge) {
+        editor.outputData = true;
+        editor.outputFile = false;
+        editor.cropAspectRatio =
+          query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
         editor.filepondCallbackBridge = {
           onconfirm: editor.onconfirm || function() {},
           oncancel: editor.oncancel || function() {}
@@ -215,6 +213,7 @@
           aspectRatio: null
         };
 
+        // size data to pass to editor
         var resize = item.getMetadata('resize');
         var imageParameters = {
           crop: crop || cropDefault,
@@ -225,13 +224,15 @@
                 width: resize.size.width,
                 height: resize.size.height
               }
-            : null
+            : null,
+          filter: item.getMetadata('filter') || null
         };
 
         editor.onconfirm = function(_ref5) {
           var data = _ref5.data;
           var crop = data.crop,
-            size = data.size;
+            size = data.size,
+            filter = data.filter;
 
           // create new metadata object
           var metadata = {};
@@ -262,6 +263,9 @@
               };
             }
           }
+
+          // set filter
+          metadata.filter = filter;
 
           // update crop metadata
           item.setMetadata(metadata);
@@ -380,7 +384,7 @@
 
         // the icon to use for the edit button
         imageEditIconEdit: [
-          '<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg"><path d="M8.5 17h1.586l7-7L15.5 8.414l-7 7V17zm-1.707-2.707l8-8a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1 0 1.414l-8 8A1 1 0 0 1 10.5 19h-3a1 1 0 0 1-1-1v-3a1 1 0 0 1 .293-.707z" fill="currentColor" fill-rule="nonzero"/></svg>',
+          '<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M8.5 17h1.586l7-7L15.5 8.414l-7 7V17zm-1.707-2.707l8-8a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1 0 1.414l-8 8A1 1 0 0 1 10.5 19h-3a1 1 0 0 1-1-1v-3a1 1 0 0 1 .293-.707z" fill="currentColor" fill-rule="nonzero"/></svg>',
           Type.STRING
         ],
 
