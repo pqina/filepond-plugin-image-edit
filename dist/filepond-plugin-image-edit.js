@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.3.0
+ * FilePondPluginImageEdit 1.3.1
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -215,6 +215,13 @@
 
         // size data to pass to editor
         var resize = item.getMetadata('resize');
+
+        // filter and color data to pass to editor
+        var filter = item.getMetadata('filter') || null;
+        var filters = item.getMetadata('filters') || null;
+        var colors = item.getMetadata('colors') || null;
+
+        // build parameters object
         var imageParameters = {
           crop: crop || cropDefault,
           size: resize
@@ -225,14 +232,17 @@
                 height: resize.size.height
               }
             : null,
-          filter: item.getMetadata('filter') || null
+          filter: filters ? filters.id || filters.matrix : filter,
+          color: colors
         };
 
         editor.onconfirm = function(_ref5) {
           var data = _ref5.data;
           var crop = data.crop,
             size = data.size,
-            filter = data.filter;
+            filter = data.filter,
+            color = data.color,
+            colorMatrix = data.colorMatrix;
 
           // create new metadata object
           var metadata = {};
@@ -264,8 +274,12 @@
             }
           }
 
-          // set filter
-          metadata.filter = filter;
+          // set filters and colors so we can restore them when re-editing the image
+          metadata.colors = color;
+          metadata.filters = filter;
+
+          // set merged color matrix to use in preview plugin
+          metadata.filter = colorMatrix;
 
           // update crop metadata
           item.setMetadata(metadata);
