@@ -177,6 +177,7 @@ const plugin = _ => {
             const filter = item.getMetadata('filter') || null;
             const filters = item.getMetadata('filters') || null;
             const colors = item.getMetadata('colors') || null;
+            const markup = item.getMetadata('markup') || null;
 
             // build parameters object
             const imageParameters = {
@@ -188,12 +189,13 @@ const plugin = _ => {
                     height: resize.size.height
                 } : null,
                 filter: filters ? filters.id || filters.matrix : filter,
-                color: colors
+                color: colors,
+                markup
             };
 
             editor.onconfirm = ({ data }) => {
 
-                const { crop, size, filter, color, colorMatrix } = data;
+                const { crop, size, filter, color, colorMatrix, markup } = data;
 
                 // create new metadata object
                 const metadata = {};
@@ -223,6 +225,10 @@ const plugin = _ => {
                             size: targetSize
                         }
                     }
+                }
+
+                if (markup) {
+                    metadata.markup = markup;
                 }
 
                 // set filters and colors so we can restore them when re-editing the image

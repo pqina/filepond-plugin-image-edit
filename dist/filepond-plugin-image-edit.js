@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.3.1
+ * FilePondPluginImageEdit 1.4.0
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -220,6 +220,7 @@
         var filter = item.getMetadata('filter') || null;
         var filters = item.getMetadata('filters') || null;
         var colors = item.getMetadata('colors') || null;
+        var markup = item.getMetadata('markup') || null;
 
         // build parameters object
         var imageParameters = {
@@ -233,7 +234,8 @@
               }
             : null,
           filter: filters ? filters.id || filters.matrix : filter,
-          color: colors
+          color: colors,
+          markup: markup
         };
 
         editor.onconfirm = function(_ref5) {
@@ -242,7 +244,8 @@
             size = data.size,
             filter = data.filter,
             color = data.color,
-            colorMatrix = data.colorMatrix;
+            colorMatrix = data.colorMatrix,
+            markup = data.markup;
 
           // create new metadata object
           var metadata = {};
@@ -272,6 +275,10 @@
                 size: targetSize
               };
             }
+          }
+
+          if (markup) {
+            metadata.markup = markup;
           }
 
           // set filters and colors so we can restore them when re-editing the image
