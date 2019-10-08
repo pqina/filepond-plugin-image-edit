@@ -135,6 +135,7 @@ const plugin = _ => {
             editor.outputData = true;
             editor.outputFile = false;
             editor.cropAspectRatio = query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
+            editor.outputCanvasBackgroundColor = query('GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR') || editor.outputCanvasBackgroundColor;
             editor.filepondCallbackBridge = {
                 onconfirm: editor.onconfirm || (() => {}),
                 oncancel: editor.oncancel || (() => {})

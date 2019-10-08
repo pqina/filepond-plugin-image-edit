@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.4.0
+ * FilePondPluginImageEdit 1.5.0
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -174,6 +174,9 @@
         editor.outputFile = false;
         editor.cropAspectRatio =
           query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
+        editor.outputCanvasBackgroundColor =
+          query('GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR') ||
+          editor.outputCanvasBackgroundColor;
         editor.filepondCallbackBridge = {
           onconfirm: editor.onconfirm || function() {},
           oncancel: editor.oncancel || function() {}
