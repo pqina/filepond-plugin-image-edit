@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.5.0
+ * FilePondPluginImageEdit 1.5.1
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -143,11 +143,6 @@ const plugin = _ => {
     if (!editor.filepondCallbackBridge) {
       editor.outputData = true;
       editor.outputFile = false;
-      editor.cropAspectRatio =
-        query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
-      editor.outputCanvasBackgroundColor =
-        query('GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR') ||
-        editor.outputCanvasBackgroundColor;
       editor.filepondCallbackBridge = {
         onconfirm: editor.onconfirm || (() => {}),
         oncancel: editor.oncancel || (() => {})
@@ -158,6 +153,13 @@ const plugin = _ => {
     const openEditor = ({ root, props, action }) => {
       const { id } = props;
       const { handleEditorResponse } = action;
+
+      // update editor props that could have changed
+      editor.cropAspectRatio =
+        query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
+      editor.outputCanvasBackgroundColor =
+        query('GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR') ||
+        editor.outputCanvasBackgroundColor;
 
       // get item
       const item = root.query('GET_ITEM', id);

@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.5.0
+ * FilePondPluginImageEdit 1.5.1
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -172,11 +172,6 @@
       if (!editor.filepondCallbackBridge) {
         editor.outputData = true;
         editor.outputFile = false;
-        editor.cropAspectRatio =
-          query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
-        editor.outputCanvasBackgroundColor =
-          query('GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR') ||
-          editor.outputCanvasBackgroundColor;
         editor.filepondCallbackBridge = {
           onconfirm: editor.onconfirm || function() {},
           oncancel: editor.oncancel || function() {}
@@ -190,6 +185,13 @@
           action = _ref4.action;
         var id = props.id;
         var handleEditorResponse = action.handleEditorResponse;
+
+        // update editor props that could have changed
+        editor.cropAspectRatio =
+          query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
+        editor.outputCanvasBackgroundColor =
+          query('GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR') ||
+          editor.outputCanvasBackgroundColor;
 
         // get item
         var item = root.query('GET_ITEM', id);
