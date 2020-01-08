@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.5.1
+ * FilePondPluginImageEdit 1.6.0
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -24,7 +24,6 @@ const plugin = _ => {
 
         // if this file is editable it shouldn't be removed immidiately even when instant uploading
         const canEdit =
-          query('GET_ALLOW_IMAGE_PREVIEW') &&
           query('GET_ALLOW_IMAGE_EDIT') &&
           query('GET_IMAGE_EDIT_ALLOW_EDIT') &&
           isPreviewableImage(file);
@@ -48,7 +47,6 @@ const plugin = _ => {
         // get file reference
         const { file } = item;
         if (
-          !query('GET_ALLOW_IMAGE_PREVIEW') ||
           !query('GET_ALLOW_IMAGE_EDIT') ||
           !query('GET_IMAGE_EDIT_INSTANT_EDIT')
         ) {
@@ -85,9 +83,7 @@ const plugin = _ => {
         };
 
         const requestEdit = () => {
-          if (!editRequestQueue.length) {
-            return;
-          }
+          if (!editRequestQueue.length) return;
 
           const { item, resolve, reject } = editRequestQueue[0];
 
@@ -127,13 +123,16 @@ const plugin = _ => {
     // get reference to created view
     const { is, view, query } = viewAPI;
 
-    if (
-      !is('file') ||
-      !query('GET_ALLOW_IMAGE_PREVIEW') ||
-      !query('GET_ALLOW_IMAGE_EDIT')
-    ) {
-      return;
-    }
+    if (!query('GET_ALLOW_IMAGE_EDIT')) return;
+
+    const canShowImagePreview = query('GET_ALLOW_IMAGE_PREVIEW');
+
+    // only run for either the file or the file info panel
+    const shouldExtendView =
+      (is('file-info') && !canShowImagePreview) ||
+      (is('file') && canShowImagePreview);
+
+    if (!shouldExtendView) return;
 
     // no editor defined, then exit
     const editor = query('GET_IMAGE_EDIT_EDITOR');
@@ -156,9 +155,9 @@ const plugin = _ => {
 
       // update editor props that could have changed
       editor.cropAspectRatio =
-        query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
+        root.query('GET_IMAGE_CROP_ASPECT_RATIO') || editor.cropAspectRatio;
       editor.outputCanvasBackgroundColor =
-        query('GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR') ||
+        root.query('GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR') ||
         editor.outputCanvasBackgroundColor;
 
       // get item
@@ -285,16 +284,10 @@ const plugin = _ => {
     /**
      * Image Preview related
      */
-    const didPreviewUpdate = ({ root }) => {
-      if (!root.ref.buttonEditItem) return;
-      root.ref.buttonEditItem.opacity = 1;
-    };
 
     // create the image edit plugin, but only do so if the item is an image
     const didLoadItem = ({ root, props }) => {
-      if (!query('GET_IMAGE_EDIT_ALLOW_EDIT')) {
-        return;
-      }
+      if (!query('GET_IMAGE_EDIT_ALLOW_EDIT')) return;
 
       const { id } = props;
 
@@ -306,47 +299,73 @@ const plugin = _ => {
       const file = item.file;
 
       // exit if this is not an image
-      if (!isPreviewableImage(file)) {
-        return;
-      }
-
-      // add edit button
-      const buttonView = view.createChildView(fileActionButton, {
-        label: 'edit',
-        icon: query('GET_IMAGE_EDIT_ICON_EDIT'),
-        opacity: 0
-      });
-
-      // edit item classname
-      buttonView.element.classList.add('filepond--action-edit-item');
-      buttonView.element.dataset.align = query(
-        'GET_STYLE_IMAGE_EDIT_BUTTON_EDIT_ITEM_POSITION'
-      );
+      if (!isPreviewableImage(file)) return;
 
       // handle interactions
       root.ref.handleEdit = e => {
         e.stopPropagation();
         root.dispatch('EDIT_ITEM', { id });
       };
-      buttonView.on('click', root.ref.handleEdit);
 
-      root.ref.buttonEditItem = view.appendChildView(buttonView);
+      if (canShowImagePreview) {
+        // add edit button to preview
+        const buttonView = view.createChildView(fileActionButton, {
+          label: 'edit',
+          icon: query('GET_IMAGE_EDIT_ICON_EDIT'),
+          opacity: 0
+        });
+
+        // edit item classname
+        buttonView.element.classList.add('filepond--action-edit-item');
+        buttonView.element.dataset.align = query(
+          'GET_STYLE_IMAGE_EDIT_BUTTON_EDIT_ITEM_POSITION'
+        );
+        buttonView.on('click', root.ref.handleEdit);
+
+        root.ref.buttonEditItem = view.appendChildView(buttonView);
+      } else {
+        // view is file info
+        const filenameElement = view.element.querySelector(
+          '.filepond--file-info-main'
+        );
+        const editButton = document.createElement('button');
+        editButton.className = 'filepond--action-edit-item-alt';
+        editButton.innerHTML =
+          query('GET_IMAGE_EDIT_ICON_EDIT') + '<span>edit</span>';
+        editButton.addEventListener('click', root.ref.handleEdit);
+        filenameElement.appendChild(editButton);
+
+        root.ref.editButton = editButton;
+      }
     };
 
     view.registerDestroyer(({ root }) => {
       if (root.ref.buttonEditItem) {
         root.ref.buttonEditItem.off('click', root.ref.handleEdit);
       }
+      if (root.ref.editButton) {
+        root.ref.editButton.removeEventListener('click', root.ref.handleEdit);
+      }
     });
 
+    const routes = {
+      EDIT_ITEM: openEditor,
+      DID_LOAD_ITEM: didLoadItem
+    };
+
+    if (canShowImagePreview) {
+      // view is file
+      const didPreviewUpdate = ({ root }) => {
+        if (!root.ref.buttonEditItem) return;
+        root.ref.buttonEditItem.opacity = 1;
+      };
+
+      routes.DID_IMAGE_PREVIEW_SHOW = didPreviewUpdate;
+    } else {
+    }
+
     // start writing
-    view.registerWriter(
-      createRoute({
-        DID_IMAGE_PREVIEW_SHOW: didPreviewUpdate,
-        DID_LOAD_ITEM: didLoadItem,
-        EDIT_ITEM: openEditor
-      })
-    );
+    view.registerWriter(createRoute(routes));
   });
 
   // Expose plugin options
