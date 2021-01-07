@@ -191,7 +191,10 @@ const plugin = _ => {
                     width: resize.size.width,
                     height: resize.size.height
                 } : null,
-                filter: filters ? filters.id || filters.matrix : filter,
+                filter: filters ? filters.id || filters.matrix : 
+                    (root.query('GET_ALLOW_IMAGE_FILTER') && root.query('GET_IMAGE_FILTER_COLOR_MATRIX') && !colors) 
+                        ? filter 
+                        : null,
                 color: colors,
                 markup
             };

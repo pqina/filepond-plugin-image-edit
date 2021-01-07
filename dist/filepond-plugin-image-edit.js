@@ -1,5 +1,5 @@
 /*!
- * FilePondPluginImageEdit 1.6.1
+ * FilePondPluginImageEdit 1.6.2
  * Licensed under MIT, https://opensource.org/licenses/MIT/
  * Please visit https://pqina.nl/filepond/ for details.
  */
@@ -237,7 +237,13 @@
                 height: resize.size.height
               }
             : null,
-          filter: filters ? filters.id || filters.matrix : filter,
+          filter: filters
+            ? filters.id || filters.matrix
+            : root.query('GET_ALLOW_IMAGE_FILTER') &&
+              root.query('GET_IMAGE_FILTER_COLOR_MATRIX') &&
+              !colors
+            ? filter
+            : null,
           color: colors,
           markup: markup
         };
