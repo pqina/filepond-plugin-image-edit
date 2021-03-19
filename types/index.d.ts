@@ -1,6 +1,8 @@
-declare module "filepond-plugin-image-edit" {
-    const FilePondPluginImageEdit: FilePondPluginImageEditProps;
-    export interface FilePondPluginImageEditProps {
+// @ts-ignore
+import { FilePondOptions } from 'filepond';
+
+declare module 'filepond' {
+    export interface FilePondOptions {
         /** Enable or disable image editing */
         allowImageEdit?: boolean;
 
@@ -19,5 +21,4 @@ declare module "filepond-plugin-image-edit" {
         /** The Image Editor to link to FilePond */
         imageEditEditor?: any;
     }
-    export default FilePondPluginImageEdit;
 }
