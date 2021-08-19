@@ -1,97 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FilePond Plugin Image Transform Demo</title>
-    <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
-    <link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css" rel="stylesheet">
-    <link href="./dist/filepond-plugin-image-edit.css" rel="stylesheet">    
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>FilePond Plugin Image Transform Demo</title>
+        <link
+            href="https://unpkg.com/filepond/dist/filepond.css"
+            rel="stylesheet"
+        />
+        <link
+            href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css"
+            rel="stylesheet"
+        />
+        <link href="./dist/filepond-plugin-image-edit.css" rel="stylesheet" />
+    </head>
+    <body>
+        <input type="file" />
 
-    <input type="file"/>
-    
-    <img src="" class="output"/>
+        <img src="" class="output" />
 
-    <script src="./dist/filepond-plugin-image-edit.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-image-crop/dist/filepond-plugin-image-crop.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-image-resize/dist/filepond-plugin-image-resize.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-image-transform/dist/filepond-plugin-image-transform.js"></script>
-    <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
-    
-    <script>
-        // Register the plugin with FilePond
-        FilePond.registerPlugin(
-            FilePondPluginImageCrop,
-            FilePondPluginImageResize,
-            FilePondPluginImagePreview,
-            FilePondPluginImageEdit,
-            FilePondPluginImageTransform
-        );
+        <script src="./dist/filepond-plugin-image-edit.js"></script>
+        <script src="https://unpkg.com/filepond-plugin-image-crop/dist/filepond-plugin-image-crop.js"></script>
+        <script src="https://unpkg.com/filepond-plugin-image-resize/dist/filepond-plugin-image-resize.js"></script>
+        <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js"></script>
+        <script src="https://unpkg.com/filepond-plugin-image-transform/dist/filepond-plugin-image-transform.js"></script>
 
-        // Get a reference to the file input element
-        const inputElement = document.querySelector('input[type="file"]');
+        <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
 
-        const editor = {
-        
-            // Called by FilePond to edit the image
-            // - should open your image editor
-            // - receives file object and image edit instructions
-            open: (file, instructions) => {
+        <script>
+            // Register the plugin with FilePond
+            FilePond.registerPlugin(
+                FilePondPluginImageCrop,
+                FilePondPluginImageResize,
+                FilePondPluginImagePreview,
+                FilePondPluginImageEdit,
+                FilePondPluginImageTransform
+            );
 
-                console.log(file, instructions);
+            // Get a reference to the file input element
+            const inputElement = document.querySelector('input[type="file"]');
 
-                // the user "edits" the data (this part is handled by a separate image cropper/editor plugin)
-                const data = Object.assign({}, instructions);
+            const editor = {
+                // Called by FilePond to edit the image
+                // - should open your image editor
+                // - receives file object and image edit instructions
+                open: (file, instructions) => {
+                    console.log('open', file, { ...instructions });
 
-                // user zooms image
-                data.crop.zoom = 2;
+                    // the user "edits" the data (this part is handled by a separate image cropper/editor plugin)
+                    const data = Object.assign({}, instructions);
 
-                // ser sets grayscale filter
-                data.filter = [
-                    0.212, 0.715, 0.114, 0.000, 0.000,
-                    0.212, 0.715, 0.114, 0.000, 0.000,
-                    0.212, 0.715, 0.114, 0.000, 0.000,
-                    0.000, 0.000, 0.000, 1.000, 0.000
-                ];
+                    // user zooms image
+                    data.crop.zoom = 2;
 
-                // the user is done editing, simulate confirm
-                setTimeout(() => {
-                    editor.onconfirm({ data });
-                }, 1000);
-                
-            },
+                    // ser sets grayscale filter
+                    // prettier-ignore
+                    data.colorMatrix = [
+                        0.212, 0.715, 0.114, 0.000, 0.000,
+                        0.212, 0.715, 0.114, 0.000, 0.000,
+                        0.212, 0.715, 0.114, 0.000, 0.000,
+                        0.000, 0.000, 0.000, 1.000, 0.000
+                    ];
 
-            // Callback set by FilePond
-            // - should be called by the editor when user confirms editing
-            // - should receive output object, resulting edit information
-            onconfirm: (output) => {},
-            
-            // Callback set by FilePond
-            // - should be called by the editor when user cancels editing
-            oncancel: () => {},
+                    // the user is done editing, simulate confirm
+                    setTimeout(() => {
+                        console.log('onconfirm', data);
+                        editor.onconfirm({ data });
 
-            // Callback set by FilePond
-            // - should be called by the editor when user closes the editor
-            onclose: () => {}
-        
-        }
+                        console.log('onclose');
+                        editor.onclose();
+                    }, 1000);
+                },
 
-        // Create the FilePond instance
-        const pond = FilePond.create(inputElement, {
-            imageCropAspectRatio: '1:1',
-            imageResizeTargetWidth: 200,
-            imageEditEditor: editor,
-            onpreparefile: (file, output) => {
-                console.log('prepared file');
-                document.querySelector('img.output').src = URL.createObjectURL(output);
-            }
-        });
+                // Callback set by FilePond
+                // - should be called by the editor when user confirms editing
+                // - should receive output object, resulting edit information
+                onconfirm: output => {},
 
+                // Callback set by FilePond
+                // - should be called by the editor when user cancels editing
+                oncancel: () => {},
 
-    </script>
+                // Callback set by FilePond
+                // - should be called by the editor when user closes the editor
+                onclose: () => {},
+            };
 
-</body>
+            // Create the FilePond instance
+            const pond = FilePond.create(inputElement, {
+                imageCropAspectRatio: '1:1',
+                imageResizeTargetWidth: 200,
+                imageEditEditor: editor,
+                onpreparefile: (file, output) => {
+                    console.log('onpreparefile');
+                    document.querySelector(
+                        'img.output'
+                    ).src = URL.createObjectURL(output);
+                },
+            });
+
+            pond.addFile('test.png');
+        </script>
+    </body>
 </html>
